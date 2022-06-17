@@ -48,25 +48,30 @@ function Yvm = labelValueToVector(Ym)
   endfor
 end
 
-function O = matrixMultiplyRowByRow(M, N)
-  % assumes that M & N have same dimensions
-  O = zeros(size(M,1), 1);
+%function O = matrixMultiplyRowByRow(M, N)
+%  % assumes that M & N have same dimensions
+%  O = zeros(size(M,1), 1);
+%
+%  for i = 1:size(M,1)
+%    v = 0
+%    for j = 1:size(M,2)
+%      v = v + M(i,j) * N(i,j)
+%    endfor
+%    O(i,1) = v;
+%  endfor
+%end
 
-  for i = 1:size(M,1)
-    v = 0
-    for j = 1:size(M,2)
-      v = v + M(i,j) * N(i,j)
-    endfor
-    O(i,1) = v;
-  endfor
+function S = regularizationSum(T)
+  S = sum(sum( T(:,2:end) .^ 2 ))
 end
+
 
 
 Theta0Vec = ones( size(X,1), 1 );
 
 X1 = [ Theta0Vec X ];  % add Theta0. 5000x400 => 5000x401
 P1 =  sigmoid( X1 * Theta1' );  % 5000x401 * 401x25  => 5000x25
-P1 = [ Theta0Vec P1 ]; % 5000x25 => 5000x26
+P1 = [ Theta0Vec P1 ]; % add Theta0. 5000x25 => 5000x26
 P = sigmoid( P1 * Theta2' ); % 5000x26 * 26x10  => 5000x10
 
 Pn = 1 - P;
@@ -80,7 +85,10 @@ SUM_TERM = -1 * ( ... % row-wise multiplication  [can also be implemented as mat
                  sum( log(P) .* Yv, 2 ) + ...
                  sum( log(Pn) .* Yvn, 2 ) ...  % 5000x10 , 5000x10 => 5000x1
                  );
-J = MEAN_TERM * sum(SUM_TERM);
+REG_TERM_SUMS = regularizationSum(Theta1) + regularizationSum(Theta2);
+REG_TERM = lambda * ( 2 ^ -1 ) * MEAN_TERM * REG_TERM_SUMS;
+
+J = (MEAN_TERM * sum(SUM_TERM)) + REG_TERM;
 
 
 % Part 2: Implement the backpropagation algorithm to compute the gradients
@@ -98,6 +106,34 @@ J = MEAN_TERM * sum(SUM_TERM);
 %               over the training examples if you are implementing it for the
 %               first time.
 %
+
+for i = 1:5
+  fprintf("%d", i);
+endfor
+
+
+for t = 1:m
+  a_1 = [ 1 X(t,:) ]; % 1x401
+  z_2 = a_1 * Theta1'; % 1x401 * 401x25 => 1x25
+  a_2 = [ 1 sigmoid( z_2 ) ]; % 1x26
+  z_3 = a_2 * Theta2'; % 1x26 * 26x10 => 1x10
+  a_3 = sigmoid( z_3 ); % 1x10
+
+  Yt = Yv(t,:); % 1x10
+  d_3 = a_3 - Yt; % 1x10 - 1x10
+  Theta2_grad = Theta2_grad + ( d_3' * a_2 ); % 10x26 + ( 10x1 * 1x26 )
+
+  d_2 = ( Theta2(:,2:end)' * d_3' ) ... % 25x10 * 10x1 => 25x1
+        .* sigmoidGradient( z_2' );     % 25x1 .* 25x1
+  Theta1_grad = Theta1_grad + ( d_2 * a_1 ); % 25x401 + ( 25x1 * 1x401 )
+
+endfor
+
+Theta2_grad = MEAN_TERM * Theta2_grad;
+Theta1_grad = MEAN_TERM * Theta1_grad;
+
+
+
 % Part 3: Implement regularization with the cost function and gradients.
 %
 %         Hint: You can implement this around the code for
@@ -106,6 +142,17 @@ J = MEAN_TERM * sum(SUM_TERM);
 %               and Theta2_grad from Part 2.
 %
 
+
+function S = gradientRegularizationSum(T)
+  S = MEAN_TERM * lambda * T(:,2:end);
+  S = [ zeros(size(T,1),1) S ];
+end
+
+%fprintf("size(Theta2): %d %d\n", size(Theta2, 1), size(Theta2, 2));
+%fprintf("grs: %f", gradientRegularizationSum(Theta2) );
+
+Theta2_grad = Theta2_grad + gradientRegularizationSum(Theta2); % 3x6 + 3x5
+Theta1_grad = Theta1_grad + gradientRegularizationSum(Theta1);
 
 
 
