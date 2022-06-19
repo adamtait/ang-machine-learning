@@ -37,9 +37,9 @@ J = ( 1/2 ) * MEAN_TERM * ( SUM_TERM + REG_TERM );
 
 %GRAD_ERROR_TERM = [ zeros(m,1) ( P - y ) ]; % 12x2
 GRAD_SUM_TERM = ERROR_TERM' * X; % 1x12 * 12x2  => 1x2
-GRAD_REG_TERM = lambda * [ zeros(1,size(theta,2)); theta(2:end,:) ]; % 1x2
+GRAD_REG_TERM = lambda * [ zeros(1,size(theta,2)); theta(2:end,:) ]; % 2x1
 
-grad = MEAN_TERM * ( GRAD_SUM_TERM' + GRAD_REG_TERM' ); %  + 2x1 => 2x1
+grad = MEAN_TERM * ( GRAD_SUM_TERM' + GRAD_REG_TERM ); % 1x2 + 2x1 => 2x1
 
 % =========================================================================
 
