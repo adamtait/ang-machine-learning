@@ -45,17 +45,27 @@ J2 = J1 - Y; % 5x4 - 5x4
 J3 = R .* J2; % 5x4 .* 5x4
 J4 = J3 .^ 2; % 5x4
 J5 = ( 1 / 2 ) * J4; % 5x4
-J = sum(sum( J5 ));
+
+RegTerm = lambda * ( 2 ^ -1 );
+RegT = RegTerm * sum( sum( Theta .^ 2 ) );
+RegX = RegTerm * sum( sum( X .^ 2 ) );
+
+J = sum(sum( J5 )) + RegT + RegX;
+
 
 % gradient for X
 for i = 1:num_movies
-  Xgn = J3(i,:) * Theta; % 1x4 * 4x3 => 1x3
+  Xgnwr = J3(i,:) * Theta; % 1x4 * 4x3 => 1x3
+  Xgnr = lambda * X(i,:); % 1x3
+  Xgn = Xgnwr + Xgnr; % 1x3 + 1x3 => 1x3
   X_grad = [ X_grad ; Xgn ];
 endfor
 
 % gradient for Theta
 for i = 1:num_users
-  Tgn = J3(:,i)' * X; % 1x5 * 5x3 => 1x3
+  Tgnwr = J3(:,i)' * X; % 1x5 * 5x3 => 1x3
+  Tgnr = lambda * Theta(i,:); % 1x3
+  Tgn = Tgnwr + Tgnr; % 1x3 + 1x3 => 1x3
   Theta_grad = [ Theta_grad ; Tgn ];
 endfor
 
